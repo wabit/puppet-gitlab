@@ -38,6 +38,7 @@ class gitlab::config {
   $unicorn = $::gitlab::unicorn
   $user = $::gitlab::user
   $web_server = $::gitlab::web_server
+  $root_password = $::gitlab::root_password
 
   # replicate $nginx to $ci_nginx if $ci_nginx_eq_nginx true
   if $ci_nginx_eq_nginx {
@@ -104,6 +105,17 @@ class gitlab::config {
         }
       }
     }
-  }
+    exec { 'rails command':
+      loglevel => info,
+      command  => "/usr/bin/gitlab-rails console production 2>/dev/null <<EOF
+      user = User.where(id: 1).first
+      user.password = '$root_password'
+      user.password_confirmation = '$root_password'
+      user.save!
+      exit
+      EOF
+      ",
 
+    }
+}
 }
